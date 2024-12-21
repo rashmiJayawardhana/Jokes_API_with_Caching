@@ -113,12 +113,24 @@ class _JokeListPageState extends State<JokeListPage> {
             Icon(Icons.face_2_sharp, size: 50.0, color: Colors.blue),
             const SizedBox(height: 16.0),
             Text(
-              'Enjoy a collection of fun jokes to brighten your day.',
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyLarge!
-                  .copyWith(color: Colors.white, fontStyle: FontStyle.italic),
+              'Bring a smile to your day with a collection of fun jokes!',
+              style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                color: Color(0xffe5e8ef), // Soft yellow for better contrast
+                fontStyle: FontStyle.italic,
+                fontWeight: FontWeight.w600,
+                fontSize: 18,
+                fontFamily: 'ComicSans',
+                shadows: [
+                  Shadow(
+                    blurRadius: 4.0,
+                    color: Colors.black45,
+                    offset: Offset(2.0, 2.0),
+                  ),
+                ],
+              ),
+              textAlign: TextAlign.center, // Center-align the text for symmetry
             ),
+
             const SizedBox(height: 28.0),
             ElevatedButton(
               onPressed: _isLoading ? null : _fetchJokes,
@@ -127,8 +139,8 @@ class _JokeListPageState extends State<JokeListPage> {
                 style: TextStyle(fontSize: 20),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.cyan,
-                foregroundColor: Colors.white,
+                backgroundColor: const Color(0xff004ebf), // Deep dark blue
+                foregroundColor: Colors.white, // White text for contrast
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(50),
                 ),
@@ -136,6 +148,7 @@ class _JokeListPageState extends State<JokeListPage> {
                 elevation: 10,
               ),
             ),
+
             const SizedBox(height: 20),
             Expanded(
               child: _jokesRaw.isEmpty
