@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'joke_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 void main() {
   runApp(MyApp());
@@ -40,6 +41,13 @@ class _JokeListPageState extends State<JokeListPage> {
   }
 
   Future<void> _fetchJokes() async {
+    if (await _isOffline()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No internet connection. Loading cached jokes.')),
+      );
+      return; // Exit if offline
+    }
+
     setState(() {
       _isLoading = true;
     });
@@ -61,6 +69,11 @@ class _JokeListPageState extends State<JokeListPage> {
     }
   }
 
+  Future<bool> _isOffline() async {
+    var connectivityResult = await Connectivity().checkConnectivity();
+    return connectivityResult == ConnectivityResult.none;
+  }
+
   Future<void> _loadCachedJokes() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? jokesJson = prefs.getString('cached_jokes');
@@ -69,6 +82,9 @@ class _JokeListPageState extends State<JokeListPage> {
       setState(() {
         _jokesRaw = List<Map<String, dynamic>>.from(json.decode(jokesJson));
       });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Loaded jokes from cache.')),
+      );
     }
   }
 
@@ -82,20 +98,30 @@ class _JokeListPageState extends State<JokeListPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Joke App'),
+        backgroundColor: const Color(0xff5fabfb),
+        elevation: 10,
+        centerTitle: true,
+        title: const Text(
+          'Joke App',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
       body: Container(
-        padding: const EdgeInsets.fromLTRB(16.0, 64.0, 16.0, 16.0),
+        padding: const EdgeInsets.fromLTRB(16.0, 30.0, 16.0, 16.0),
         decoration: BoxDecoration(
           gradient: RadialGradient(
-            center: Alignment.center, // Center the gradient
-            radius: 1.0, // Adjust radius to control spread
+            center: Alignment.center,
+            radius: 1.0,
             colors: [
-              Color(0xff001848), // Deep dark blue for the edges
-              Color(0xff003366), // Mid blue shade
-              Color(0xff00509E), // Brighter blue for the center
+              Color(0xff001848),
+              Color(0xff003366),
+              Color(0xff00509E),
             ],
-            stops: [0.3, 0.7, 1.0], // Define the stops for color transitions
+            stops: [0.3, 0.7, 1.0],
           ),
         ),
         child: Column(
@@ -110,12 +136,11 @@ class _JokeListPageState extends State<JokeListPage> {
               ),
             ),
             const SizedBox(height: 16.0),
-            Icon(Icons.face_2_sharp, size: 50.0, color: Colors.blue),
-            const SizedBox(height: 16.0),
+
             Text(
               'Bring a smile to your day with a collection of fun jokes!',
               style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                color: Color(0xffe5e8ef), // Soft yellow for better contrast
+                color: Color(0xffe5e8ef),
                 fontStyle: FontStyle.italic,
                 fontWeight: FontWeight.w600,
                 fontSize: 18,
@@ -135,7 +160,7 @@ class _JokeListPageState extends State<JokeListPage> {
             ElevatedButton(
               onPressed: _isLoading ? null : _fetchJokes,
               child: const Text(
-                'Get Jokes',
+                'View Jokes',
                 style: TextStyle(fontSize: 20),
               ),
               style: ElevatedButton.styleFrom(
