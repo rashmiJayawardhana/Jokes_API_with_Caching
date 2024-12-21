@@ -1,125 +1,205 @@
 import 'package:flutter/material.dart';
+import 'joke_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 void main() {
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Jokes App',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
+        primarySwatch: Colors.blue,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      debugShowCheckedModeBanner: false,
+      home: JokeListPage(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class JokeListPage extends StatefulWidget {
+  const JokeListPage({Key? key}) : super(key: key);
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  _JokeListPageState createState() => _JokeListPageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _JokeListPageState extends State<JokeListPage> {
+  final JokeService _jokeService = JokeService();
+  List<Map<String, dynamic>> _jokesRaw = [];
+  bool _isLoading = false;
 
-  void _incrementCounter() {
+  @override
+  void initState() {
+    super.initState();
+    _loadCachedJokes();
+  }
+
+  Future<void> _fetchJokes() async {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      _isLoading = true;
     });
+
+    try {
+      final jokes = await _jokeService.fetchJokesRaw();
+      setState(() {
+        _jokesRaw = jokes.length >= 5 ? jokes.take(5).toList() : jokes;
+      });
+      await _cacheJokes(_jokesRaw); // Cache the fetched jokes
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to fetch jokes: $e')),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadCachedJokes() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? jokesJson = prefs.getString('cached_jokes');
+
+    if (jokesJson != null) {
+      setState(() {
+        _jokesRaw = List<Map<String, dynamic>>.from(json.decode(jokesJson));
+      });
+    }
+  }
+
+  Future<void> _cacheJokes(List<Map<String, dynamic>> jokes) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String jokesJson = json.encode(jokes);
+    await prefs.setString('cached_jokes', jokesJson);
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+        title: const Text('Joke App'),
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
+      body: Container(
+        padding: const EdgeInsets.fromLTRB(16.0, 64.0, 16.0, 16.0),
+        decoration: BoxDecoration(
+          gradient: RadialGradient(
+            center: Alignment.center, // Center the gradient
+            radius: 1.0, // Adjust radius to control spread
+            colors: [
+              Color(0xff001848), // Deep dark blue for the edges
+              Color(0xff003366), // Mid blue shade
+              Color(0xff00509E), // Brighter blue for the center
+            ],
+            stops: [0.3, 0.7, 1.0], // Define the stops for color transitions
+          ),
+        ),
         child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
+          children: [
             Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+              'Welcome!',
+              style: Theme.of(context).textTheme.headlineMedium!.copyWith(
+                color: Colors.orange[50],
+                fontWeight: FontWeight.w900,
+                fontFamily: 'ComicSans',
+                fontSize: 40,
+              ),
             ),
+            const SizedBox(height: 16.0),
+            Icon(Icons.face_2_sharp, size: 50.0, color: Colors.blue),
+            const SizedBox(height: 16.0),
+            Text(
+              'Enjoy a collection of fun jokes to brighten your day.',
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyLarge!
+                  .copyWith(color: Colors.white, fontStyle: FontStyle.italic),
+            ),
+            const SizedBox(height: 28.0),
+            ElevatedButton(
+              onPressed: _isLoading ? null : _fetchJokes,
+              child: const Text(
+                'Get Jokes',
+                style: TextStyle(fontSize: 20),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.cyan,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(50),
+                ),
+                padding: const EdgeInsets.all(16.0),
+                elevation: 10,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Expanded(
+              child: _jokesRaw.isEmpty
+                  ? const Center(
+                child: Text(
+                  'No jokes fetched yet.',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.black45,
+                  ),
+                ),
+              )
+                  : ListView.builder(
+                itemCount: _jokesRaw.length,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemBuilder: (context, index) {
+                  final joke = _jokesRaw[index];
+                  return Container(
+                    margin: const EdgeInsets.symmetric(vertical: 8),
+                    padding: const EdgeInsets.all(16.0),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12.0),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.5),
+                          spreadRadius: 2,
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          joke['type'] == 'single'
+                              ? 'Single Joke'
+                              : joke['category'],
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleLarge!
+                              .copyWith(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8.0),
+                        Text(
+                          joke['type'] == 'single'
+                              ? joke['joke']
+                              : '${joke['setup']}\n\n${joke['delivery']}',
+                          style: const TextStyle(
+                              fontSize: 16.0, color: Colors.black87),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            )
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
