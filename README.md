@@ -24,3 +24,17 @@ A fun and interactive **Joke App** built using **Flutter** and the **Joke API**,
 ```sh
 git clone https://github.com/your-username/Joke-App-Flutter.git
 cd Joke-App-Flutter
+```
+
+### 3️⃣ Install Dependencies  
+```sh
+flutter pub get
+```
+
+### 4️⃣ Run the App  
+```sh
+flutter run
+```
+
+## 🤝 Contributing  
+Feel free to contribute by creating a pull request!  
