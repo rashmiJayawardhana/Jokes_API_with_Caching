@@ -1,4 +1,4 @@
-# 🚀 Joke App with Flutter 🎉  
+# 🚀 Joke App 🎉  
 
 A fun and interactive **Joke App** built using **Flutter** and the **Joke API**, with support for both **online and offline** modes. This app fetches jokes from an API and caches them using **shared_preferences** for offline access.  
 
